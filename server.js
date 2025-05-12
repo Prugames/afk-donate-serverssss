@@ -24,10 +24,13 @@ app.get('/', async (req, res) => {
   try {
     console.log(`Servidor: Solicitando gamepasses para UserId ${userId} con clave: ${API_KEY.substring(0, 8)}...`);
 
-    const response = await axios.get(`https://api.roblox.com/Marketplace/GamePassProducts?universeId=${UNIVERSE_ID}`, {
+    // Usar un proxy para evitar problemas de DNS
+    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+    const response = await axios.get(`${proxyUrl}https://inventory.roblox.com/v1/users/${userId}/assets/collectibles?assetTypes=GamePass`, {
       headers: {
         'x-api-key': API_KEY,
-        'accept': 'application/json'
+        'accept': 'application/json',
+        'Origin': 'https://afk-donate-server.onrender.com'
       },
       timeout: 10000
     });
@@ -35,27 +38,16 @@ app.get('/', async (req, res) => {
     console.log(`Servidor: Estado de la respuesta: ${response.status}`);
     console.log(`Servidor: Datos crudos de Roblox: ${JSON.stringify(response.data)}`);
 
-    const gamePasses = response.data || [];
+    const gamePasses = response.data.data || [];
     if (!Array.isArray(gamePasses)) {
       console.log('Servidor: No se encontraron gamepasses o respuesta inválida');
       return res.json([]);
     }
 
-    const userGamePasses = await axios.get(`https://inventory.roblox.com/v1/users/${userId}/assets/collectibles?assetTypes=GamePass`, {
-      headers: {
-        'x-api-key': API_KEY,
-        'accept': 'application/json'
-      },
-      timeout: 10000
-    });
-
-    const userOwnedIds = userGamePasses.data.data.map(item => item.assetId);
-    const formattedGamePasses = gamePasses
-      .filter(pass => userOwnedIds.includes(pass.Id))
-      .map(pass => ({
-        id: pass.Id,
-        name: pass.Name || 'Gamepass Desconocido'
-      }));
+    const formattedGamePasses = gamePasses.map(pass => ({
+      id: pass.assetId,
+      name: pass.name || 'Gamepass Desconocido'
+    }));
 
     res.json(formattedGamePasses);
   } catch (error) {
