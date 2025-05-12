@@ -24,13 +24,13 @@ app.get('/', async (req, res) => {
   try {
     console.log(`Servidor: Solicitando gamepasses para UserId ${userId} con clave: ${API_KEY.substring(0, 8)}...`);
 
-    // Usar un proxy alternativo para evitar problemas de DNS
-    const proxyUrl = 'https://api.allorigins.win/get?url=';
-    const encodedUrl = encodeURIComponent(`https://inventory.roblox.com/v1/users/${userId}/assets/collectibles?assetTypes=GamePass`);
-    const response = await axios.get(`${proxyUrl}${encodedUrl}`, {
+    // Usar la IP directa de api.roblox.com
+    const robloxUrl = `http://131.93.133.150/v1/users/${userId}/assets/collectibles?assetTypes=GamePass`;
+    const response = await axios.get(robloxUrl, {
       headers: {
         'x-api-key': API_KEY,
-        'accept': 'application/json'
+        'accept': 'application/json',
+        'Host': 'inventory.roblox.com' // Necesario para que Roblox acepte la solicitud
       },
       timeout: 10000
     });
@@ -38,7 +38,7 @@ app.get('/', async (req, res) => {
     console.log(`Servidor: Estado de la respuesta: ${response.status}`);
     console.log(`Servidor: Datos crudos de Roblox: ${JSON.stringify(response.data)}`);
 
-    const gamePasses = JSON.parse(response.data.contents).data || [];
+    const gamePasses = response.data.data || [];
     if (!Array.isArray(gamePasses)) {
       console.log('Servidor: No se encontraron gamepasses o respuesta inválida');
       return res.json([]);
