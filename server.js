@@ -24,13 +24,13 @@ app.get('/', async (req, res) => {
   try {
     console.log(`Servidor: Solicitando gamepasses para UserId ${userId} con clave: ${API_KEY.substring(0, 8)}...`);
 
-    // Usar un proxy para evitar problemas de DNS
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-    const response = await axios.get(`${proxyUrl}https://inventory.roblox.com/v1/users/${userId}/assets/collectibles?assetTypes=GamePass`, {
+    // Usar un proxy alternativo para evitar problemas de DNS
+    const proxyUrl = 'https://api.allorigins.win/get?url=';
+    const encodedUrl = encodeURIComponent(`https://inventory.roblox.com/v1/users/${userId}/assets/collectibles?assetTypes=GamePass`);
+    const response = await axios.get(`${proxyUrl}${encodedUrl}`, {
       headers: {
         'x-api-key': API_KEY,
-        'accept': 'application/json',
-        'Origin': 'https://afk-donate-server.onrender.com'
+        'accept': 'application/json'
       },
       timeout: 10000
     });
@@ -38,7 +38,7 @@ app.get('/', async (req, res) => {
     console.log(`Servidor: Estado de la respuesta: ${response.status}`);
     console.log(`Servidor: Datos crudos de Roblox: ${JSON.stringify(response.data)}`);
 
-    const gamePasses = response.data.data || [];
+    const gamePasses = JSON.parse(response.data.contents).data || [];
     if (!Array.isArray(gamePasses)) {
       console.log('Servidor: No se encontraron gamepasses o respuesta inválida');
       return res.json([]);
